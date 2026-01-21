@@ -56,7 +56,7 @@ export default function FacialExpression({ setSongs }) {
       }
 
   
-      const response = await api.get(`/songs/svng?mood=${expression}`);
+      const response = await api.get(`/api/songs/svng?mood=${expression}`);
       console.log(response.data);
       setSongs(response.data.songs);
     } catch (err) {
