@@ -52,7 +52,7 @@ export default function FacialExpression({setSongs}) {
       }
     }
 
-    axios.get(`http://localhost:5000/svng?mood=${expression}`)
+    axios.get(`http://localhost:5000/api/songs/svng?mood=${expression}`)
       .then((response) => {
         console.log(response.data);
         setSongs(response.data.songs);
