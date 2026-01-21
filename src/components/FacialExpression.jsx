@@ -1,15 +1,18 @@
 import React, { useEffect, useRef } from "react";
 import * as faceapi from "face-api.js";
 import "./FacialExpression.css";
-import axios from "axios";
 import { useState } from "react";
+import axios from "axios";
 
 
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+});
 
-export default function FacialExpression({setSongs}) {
+export default function FacialExpression({ setSongs }) {
   const videoRef = useRef(null);
-   
 
+  
   const loadModels = async () => {
     const MODEL_URL = "/models";
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
@@ -17,6 +20,7 @@ export default function FacialExpression({setSongs}) {
     console.log("Models loaded");
   };
 
+  
   const startVideo = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -26,39 +30,41 @@ export default function FacialExpression({setSongs}) {
     }
   };
 
+  
   const detectMood = async () => {
     if (!videoRef.current) return;
 
-    const detections = await faceapi
-      .detectAllFaces(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
-      )
-      .withFaceExpressions();
+    try {
+      const detections = await faceapi
+        .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .withFaceExpressions();
 
-    if (!detections || detections.length === 0) {
-      console.log("No face detected");
-      return;
-    }
-
-    let maxValue = 0;
-    let expression = "";
-
-    for (const exp of Object.keys(detections[0].expressions)) {
-      const value = detections[0].expressions[exp];
-      if (value > maxValue) {
-        maxValue = value;
-        expression = exp;
+      if (!detections || detections.length === 0) {
+        console.log("No face detected");
+        return;
       }
-    }
 
-    axios.get(`http://localhost:5000/api/songs/svng?mood=${expression}`)
-      .then((response) => {
-        console.log(response.data);
-        setSongs(response.data.songs);
-      })
+  
+      let maxValue = 0;
+      let expression = "";
+      for (const exp of Object.keys(detections[0].expressions)) {
+        const value = detections[0].expressions[exp];
+        if (value > maxValue) {
+          maxValue = value;
+          expression = exp;
+        }
+      }
+
+  
+      const response = await api.get(`/songs/svng?mood=${expression}`);
+      console.log(response.data);
+      setSongs(response.data.songs);
+    } catch (err) {
+      console.error("Error detecting mood or fetching songs:", err);
+    }
   };
 
+  // Load models and start webcam on mount
   useEffect(() => {
     loadModels().then(startVideo);
   }, []);
